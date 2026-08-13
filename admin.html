@@ -353,8 +353,7 @@ function logout() {
   }
 }
 
-// ✅ FIX: Admin ला सर्व faculty चा data दिसण्यासाठी
-// सर्व localStorage keys scan करून classes_* आणि timetables_* keys वाचतो
+ो
 function loadAllFacultyData() {
   let allClasses = [];
   let allTimetables = [];
@@ -373,7 +372,7 @@ function loadAllFacultyData() {
     } catch(e) {}
   }
 
-  // Legacy support: जुन्या "classes" key मधील data पण घ्या
+ या
   try {
     const legacyClasses = JSON.parse(localStorage.getItem("classes") || "[]");
     const legacyTimetables = JSON.parse(localStorage.getItem("timetables") || "[]");
@@ -426,7 +425,7 @@ function showPage(page) {
   timetablePage.classList.add("hidden");
   attendancePage.classList.add("hidden");
 
-  // ✅ Page switch केल्यावर fresh data लोड करा
+ ा
   refreshData();
 
   if(page === "home") { 
@@ -797,18 +796,18 @@ function showStudentList() {
 }
 
 function renderFaculty() {
-  // ✅ सर्व registered faculty users मिळवा
+ ा
   const allUsers = JSON.parse(localStorage.getItem("users") || "[]");
   const registeredFaculty = allUsers.filter(u => u.role === "faculty");
 
-  // Classes मधून faculty names पण घ्या
+  ा
   let classBasedFacultyNames = [...new Set(classes.map(c => c.faculty))];
   classBasedFacultyNames = classBasedFacultyNames.filter(name => name && name.trim().toLowerCase() !== "unknown faculty");
 
-  // Registered faculty + class-based faculty एकत्र करा
+  
   const facultyMap = {};
 
-  // Registered users ला priority द्या (email माहीत आहे)
+ 
   registeredFaculty.forEach(u => {
     const key = u.email;
     if (!facultyMap[key]) {
