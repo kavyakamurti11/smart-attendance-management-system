@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Faculty Login</title>
+  <style>
+    body{font-family:Segoe UI, Tahoma, sans-serif; background:#f7fff7; display:flex; align-items:center; justify-content:center; height:100vh; margin:0;}
+    .box{background:#fff; padding:28px; border-radius:10px; width:420px; box-shadow:0 8px 30px rgba(0,0,0,0.06);}
+    h2{margin-bottom:14px;}
+    .grp{margin-bottom:12px;}
+    input{width:100%; padding:10px; border-radius:6px; border:1px solid #eee;}
+    .btn{width:100%; padding:10px; border:none; border-radius:6px; background:#1fa67a; color:#fff; font-weight:600; cursor:pointer;}
+    .muted{font-size:13px; color:#666; margin-top:8px;}
+    a{color:#1fa67a; text-decoration:none;}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>Faculty Login</h2>
+
+    <form id="loginForm">
+      <div class="grp"><label>Email</label><input type="email" id="email" required></div>
+      <div class="grp"><label>Password</label><input type="password" id="password" required></div>
+      <button type="submit" class="btn">Login as Faculty</button>
+    </form>
+
+    <p class="muted">OR <a href="admin_login.html">Admin Login</a> • <a href="student_login.html">Student Login</a><br>new account? <a href="#" id="showRegister">Create Account</a></p>
+
+    <div id="regBox" style="display:none; margin-top:12px;">
+      <hr style="margin:12px 0;">
+      <h3>Create Faculty Account</h3>
+      <form id="regForm">
+        <div class="grp"><input type="text" id="rname" placeholder="Full name" required></div>
+        <div class="grp"><input type="email" id="remail" placeholder="Email" required></div>
+        <div class="grp"><input type="password" id="rpass" placeholder="Password" required></div>
+        <input type="hidden" id="rrole" value="faculty">
+        <button type="submit" class="btn" style="background:#3b82f6; margin-top:6px;">Create Faculty Account</button>
+      </form>
+    </div>
+  </div>
+
+<script src="common.js"></script>
+<script>
+  document.getElementById('loginForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type=submit]');
+    btn.disabled = true;
+    const email = document.getElementById('email').value.trim();
+    const pass = document.getElementById('password').value;
+    const passHash = await hashPassword(pass);
+    const users = getUsers();
+    let user = users.find(x=> x.email===email && x.password===passHash && x.role==='faculty');
+
+    // Backward compatibility: upgrade old plaintext-password accounts to hashed on successful login
+    if (!user) {
+      const legacy = users.find(x=> x.email===email && x.password===pass && x.role==='faculty');
+      if (legacy) {
+        legacy.password = passHash;
+        saveUsers(users);
+        user = legacy;
+      }
+    }
+
+    btn.disabled = false;
+    if(user){
+      sessionStorage.setItem('currentUser', JSON.stringify(user));
+      alert('Welcome, ' + (user.name || user.email));
+      // Also register faculty in admin-friendly list for admin view
+      registerFacultyInAdmin(user.name || user.email, user.email);
+      window.location.href = 'faculty.html';
+    } else {
+      alert('Invalid credentials or not a Faculty.');
+    }
+  });
+
+  document.getElementById('showRegister').addEventListener('click', function(e){
+    e.preventDefault();
+    document.getElementById('regBox').style.display = 'block';
+  });
+  document.getElementById('regForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    const name = document.getElementById('rname').value.trim();
+    const email = document.getElementById('remail').value.trim();
+    const password = document.getElementById('rpass').value;
+    const role = document.getElementById('rrole').value || 'faculty';
+    let users = getUsers();
+    if(users.some(u=>u.email===email)){ alert('Email already registered'); return; }
+    const passHash = await hashPassword(password);
+    users.push({ name, email, password: passHash, role });
+    saveUsers(users);
+    alert('Faculty account created. Now login.');
+    document.getElementById('email').value = email;
+    document.getElementById('password').value = password;
+    document.getElementById('regBox').style.display = 'none';
+  });
+
+  // helper to add faculty to localStorage key 'faculties' used by admin dashboard
+  function registerFacultyInAdmin(username, email) {
+    const LS_FACULTIES_KEY = "faculties";
+    let faculties = JSON.parse(localStorage.getItem(LS_FACULTIES_KEY) || "[]");
+    const exists = faculties.some(f => f.email === email);
+    if (!exists) {
+      faculties.push({ username, email, role: "faculty" });
+      localStorage.setItem(LS_FACULTIES_KEY, JSON.stringify(faculties));
+    }
+  }
+</script>
+</body>
+</html>

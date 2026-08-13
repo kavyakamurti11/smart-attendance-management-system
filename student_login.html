@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="mr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Student Login</title>
+  <style>
+    body{font-family:Segoe UI, Tahoma, sans-serif; background:#fff7f0; display:flex; align-items:center; justify-content:center; height:100vh; margin:0;}
+    .box{background:#fff; padding:28px; border-radius:10px; width:420px; box-shadow:0 8px 30px rgba(0,0,0,0.06);}
+    h2{margin-bottom:14px;}
+    .grp{margin-bottom:12px;}
+    label{font-size:13px; color:#555; display:block; margin-bottom:4px;}
+    input{width:100%; padding:10px; border-radius:6px; border:1px solid #eee; box-sizing:border-box;}
+    .btn{width:100%; padding:10px; border:none; border-radius:6px; background:#e07b1f; color:#fff; font-weight:600; cursor:pointer;}
+    .btn:disabled{opacity:0.6; cursor:not-allowed;}
+    .muted{font-size:13px; color:#666; margin-top:8px;}
+    a{color:#e07b1f; text-decoration:none;}
+    .hint{font-size:12px; color:#888; margin-top:-6px; margin-bottom:10px;}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>🎓 Student Login</h2>
+
+    <form id="loginForm">
+      <div class="grp"><label>Email</label><input type="email" id="email" required></div>
+      <div class="grp"><label>Password</label><input type="password" id="password" required></div>
+      <button type="submit" class="btn" id="loginBtn">Login as Student</button>
+    </form>
+
+    <p class="muted">
+      OR <a href="admin_login.html">Admin Login</a> • <a href="faculty_login.html">Faculty Login</a><br>
+      new account? <a href="#" id="showRegister">Create Account</a>
+    </p>
+
+    <div id="regBox" style="display:none; margin-top:12px;">
+      <hr style="margin:12px 0;">
+      <h3>Create Student Account</h3>
+      <form id="regForm">
+        <div class="grp"><label>Full Name</label><input type="text" id="rname" required></div>
+        <div class="grp"><label>Roll Number</label><input type="text" id="rroll" required></div>
+        <div class="hint">Roll number must exactly match the one your faculty added you with in class.</div>
+        <div class="grp"><label>Email</label><input type="email" id="remail" required></div>
+        <div class="grp"><label>Password</label><input type="password" id="rpass" placeholder="min 6 characters" minlength="6" required></div>
+        <input type="hidden" id="rrole" value="student">
+        <button type="submit" class="btn" style="background:#28a745; margin-top:6px;" id="regBtn">Create Student Account</button>
+      </form>
+    </div>
+  </div>
+
+<script src="common.js"></script>
+<script>
+  document.getElementById('loginForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    const btn = document.getElementById('loginBtn');
+    btn.disabled = true; btn.textContent = 'Checking...';
+
+    const email = document.getElementById('email').value.trim();
+    const pass = document.getElementById('password').value;
+    const passHash = await hashPassword(pass);
+    const users = getUsers();
+    const user = users.find(x=> x.email===email && x.password===passHash && x.role==='student');
+
+    btn.disabled = false; btn.textContent = 'Login as Student';
+
+    if(user){
+      sessionStorage.setItem('currentUser', JSON.stringify(user));
+      window.location.href = 'student.html';
+    } else {
+      alert('Invalid credentials or not a Student.');
+    }
+  });
+
+  document.getElementById('showRegister').addEventListener('click', function(e){
+    e.preventDefault();
+    document.getElementById('regBox').style.display = 'block';
+  });
+
+  document.getElementById('regForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    const btn = document.getElementById('regBtn');
+    btn.disabled = true; btn.textContent = 'Creating...';
+
+    const name = document.getElementById('rname').value.trim();
+    const roll = document.getElementById('rroll').value.trim();
+    const email = document.getElementById('remail').value.trim();
+    const password = document.getElementById('rpass').value;
+    const role = document.getElementById('rrole').value || 'student';
+
+    let users = getUsers();
+    if(users.some(u=>u.email===email)){
+      alert('Email already registered');
+      btn.disabled = false; btn.textContent = 'Create Student Account';
+      return;
+    }
+
+    // Warn (but don't block) if this roll number isn't found in any class yet —
+    // faculty may add the student later, or roll may have a typo.
+    const allClasses = loadAllClassesData();
+    const foundInAnyClass = allClasses.some(c => c.students.some(s => String(s.roll).trim().toLowerCase() === roll.toLowerCase()));
+    if (!foundInAnyClass) {
+      const proceed = confirm('This roll number was not found in any class yet. You can still create the account — your attendance will show up once your faculty adds you. Continue?');
+      if (!proceed) {
+        btn.disabled = false; btn.textContent = 'Create Student Account';
+        return;
+      }
+    }
+
+    const passHash = await hashPassword(password);
+    users.push({ name, email, password: passHash, role, roll });
+    saveUsers(users);
+
+    btn.disabled = false; btn.textContent = 'Create Student Account';
+    alert('Student account created. Now login.');
+    document.getElementById('email').value = email;
+    document.getElementById('regBox').style.display = 'none';
+    document.getElementById('regForm').reset();
+  });
+</script>
+</body>
+</html>
