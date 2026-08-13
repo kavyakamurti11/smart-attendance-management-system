@@ -435,7 +435,7 @@ const attendancePage = document.getElementById("attendancePage");
 const recordsPage = document.getElementById("recordsPage");
 const navBtns = document.querySelectorAll(".nav-btn");
 
-// ✅ FIX: प्रत्येक faculty साठी त्यांच्या email नुसार वेगळी localStorage key
+
 const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
 if (!currentUser) {
     alert('Please login first!');
